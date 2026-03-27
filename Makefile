@@ -6,5 +6,5 @@ build:
 test:
 	go test -v ./...
 
-run:
+run: build
 	./bin/gendiff

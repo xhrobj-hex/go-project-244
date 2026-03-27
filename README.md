@@ -7,6 +7,31 @@
 - Поддержка разных входных форматов: `yaml`, `json`
 - Генерация отчета в виде `plain text`, `stylish` и `json`
 
+## Установка
+
+Сборка из исходников:
+
+```bash
+git clone https://github.com/xhrobj-hex/go-project-244.git
+cd go-project-244
+make build
+```
+
+Бинарник появится в `./bin/gendiff`.
+
+## Флаги
+
+- `--format`, `-f` - формат вывода (`stylish` по умолчанию)
+- `--help`, `-h` - справка
+
+## Примеры
+
+Показать справку:
+
+```bash
+./bin/gendiff --help
+```
+
 ---
 
 ## Hexlet tests and linter status:
