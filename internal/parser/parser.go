@@ -21,7 +21,9 @@ func Parse(path string) (map[string]any, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer file.Close()
+	defer func() {
+		_ = file.Close()
+	}()
 
 	// 3. прочитать содержимое
 	filedata, err := io.ReadAll(file)
