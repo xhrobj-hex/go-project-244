@@ -7,7 +7,7 @@ test:
 	go test -v ./...
 
 run: build
-	./bin/gendiff testdata/file1.json
+	./bin/gendiff testdata/file1.json testdata/file2.json
 
 clean:
 	rm -rf bin/gendiff

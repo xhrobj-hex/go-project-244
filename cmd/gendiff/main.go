@@ -1,17 +1,23 @@
 package main
 
 import (
+	"code"
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"os"
-
-	"code/internal/parser"
 
 	"github.com/urfave/cli/v3"
 )
 
 func main() {
+	if err := run(); err != nil {
+		log.Fatal(err)
+	}
+}
+
+func run() error {
 	cmd := &cli.Command{
 		Name:  "gendiff",
 		Usage: "Compares two configuration files and shows a difference.",
@@ -23,24 +29,30 @@ func main() {
 				Usage:   "output format",
 			},
 		},
-
-		// https://cli.urfave.org/v3/examples/arguments/basics/
-
 		Action: func(ctx context.Context, cmd *cli.Command) error {
-			for i := 0; i < cmd.Args().Len(); i++ {
-				filepath := cmd.Args().Get(i)
-				json, err := parser.Parse(filepath)
-				if err != nil {
-					return err
-				}
-				fmt.Printf("%#v\n", json)
+			if cmd.Args().Len() != 2 {
+				return errors.New("number of params != 2")
 			}
 
-			return nil
+			filepath1 := cmd.Args().First()
+			filepath2 := cmd.Args().Get(1)
+
+			format := cmd.String("format")
+
+			return genDiff(filepath1, filepath2, format)
 		},
 	}
 
-	if err := cmd.Run(context.Background(), os.Args); err != nil {
-		log.Fatal(err)
+	return cmd.Run(context.Background(), os.Args)
+}
+
+func genDiff(filepath1, filepath2, format string) error {
+	diff, err := code.GenDiff(filepath1, filepath2, format)
+	if err != nil {
+		return err
 	}
+
+	fmt.Println(diff)
+
+	return nil
 }
