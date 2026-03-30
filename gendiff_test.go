@@ -1,27 +1,29 @@
 package code
 
-import "testing"
+import (
+	"path/filepath"
+	"testing"
+)
 
-func Test_GenDiff_OK(t *testing.T) {
-	// 	file {
-	//   "host": "hexlet.io",
-	//   "timeout": 50,
-	//   "proxy": "123.234.53.22",
-	//   "follow": false
-	// }
+func TestGenDiff(t *testing.T) {
+	file1 := filepath.Join("testdata", "file1.json")
+	file2 := filepath.Join("testdata", "file2.json")
 
-	//	{
-	//	  "timeout": 20,
-	//	  "verbose": true,
-	//	  "host": "hexlet.io"
-	//	}
+	got, err := GenDiff(file1, file2, "stylish")
+	if err != nil {
+		t.Fatalf("GenDiff returned error: %v", err)
+	}
 
-	// {
-	//   - follow: false
-	//     host: hexlet.io
-	//   - proxy: 123.234.53.22
-	//   - timeout: 50
-	//   + timeout: 20
-	//   + verbose: true
-	// }
+	want := `{
+  - follow: false
+    host: hexlet.io
+  - proxy: 123.234.53.22
+  - timeout: 50
+  + timeout: 20
+  + verbose: true
+}`
+
+	if got != want {
+		t.Errorf("unexpected diff result\nwant:\n%s\ngot:\n%s", want, got)
+	}
 }

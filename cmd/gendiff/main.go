@@ -3,7 +3,6 @@ package main
 import (
 	"code"
 	"context"
-	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -31,7 +30,7 @@ func run() error {
 		},
 		Action: func(ctx context.Context, cmd *cli.Command) error {
 			if cmd.Args().Len() != 2 {
-				return errors.New("number of params != 2")
+				return fmt.Errorf("expected 2 arguments, got %d", cmd.Args().Len())
 			}
 
 			filepath1 := cmd.Args().First()
