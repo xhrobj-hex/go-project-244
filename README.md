@@ -7,6 +7,11 @@
 - Поддержка разных входных форматов: `yaml`, `json`
 - Генерация отчета в виде `plain text`, `stylish` и `json`
 
+## Флаги
+
+- `--format`, `-f` - формат вывода (`stylish` по умолчанию)
+- `--help`, `-h` - справка
+
 ## Установка
 
 Сборка из исходников:
@@ -19,17 +24,24 @@ make build
 
 Бинарник появится в `./bin/gendiff`.
 
-## Флаги
+## Использование
 
-- `--format`, `-f` - формат вывода (`stylish` по умолчанию)
-- `--help`, `-h` - справка
+```bash
+./bin/gendiff <filepath1> <filepath2> [flags]
+```
 
-## Примеры
+### Примеры
 
 Показать справку:
 
 ```bash
 ./bin/gendiff --help
+```
+
+Сравнить два JSON-файла:
+
+```bash
+./bin/gendiff testdata/file1.json testdata/file2.json
 ```
 
 ---
