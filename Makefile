@@ -1,4 +1,9 @@
-.PHONY: build test run clean lint
+.PHONY: \
+	build \
+	test test-with-coverage \
+	run \
+	lint \
+	clean 
 
 build:
 	go build -o bin/gendiff ./cmd/gendiff
@@ -6,11 +11,14 @@ build:
 test:
 	go test -v ./...
 
+test-with-coverage:
+	go test -coverprofile=coverage.out ./...
+
 run: build
 	./bin/gendiff testdata/file1.json testdata/file2.json
 
-clean:
-	rm -rf bin/gendiff
-
 lint:
 	golangci-lint run
+
+clean:
+	rm -rf bin/gendiff coverage.out
