@@ -1,4 +1,4 @@
-.PHONY: build test run clean
+.PHONY: build test run clean lint
 
 build:
 	go build -o bin/gendiff ./cmd/gendiff
@@ -11,3 +11,6 @@ run: build
 
 clean:
 	rm -rf bin/gendiff
+
+lint:
+	golangci-lint run
