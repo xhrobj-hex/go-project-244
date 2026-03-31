@@ -7,11 +7,6 @@
 - Поддержка разных входных форматов: `yaml`, `json`
 - Генерация отчета в виде `plain text`, `stylish` и `json`
 
-## Флаги
-
-- `--format`, `-f` - формат вывода (`stylish` по умолчанию)
-- `--help`, `-h` - справка
-
 ## Установка
 
 Сборка из исходников:
@@ -28,6 +23,12 @@ make build
 
 ```bash
 ./bin/gendiff <filepath1> <filepath2> [flags]
+
+### Флаги
+
+- `--format`, `-f` - формат вывода (`stylish` по умолчанию)
+- `--help`, `-h` - справка
+
 ```
 
 ### Примеры
@@ -42,6 +43,18 @@ make build
 
 ```bash
 ./bin/gendiff testdata/file1.json testdata/file2.json
+```
+
+Сравнить два YAML-файла:
+
+```bash
+./bin/gendiff testdata/file1.yml testdata/file2.yml
+```
+
+Сравнить JSON и YAML:
+
+```bash
+./bin/gendiff testdata/file1.json testdata/file2.yml
 ```
 
 ---
