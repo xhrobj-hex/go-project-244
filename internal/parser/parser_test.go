@@ -8,7 +8,7 @@ import (
 	"testing"
 )
 
-func Test_ParserUnmarshal_OK(t *testing.T) {
+func TestParseJSON(t *testing.T) {
 	data := `{
   		"host": "hexlet.io",
   		"timeout": 50,
@@ -19,7 +19,7 @@ func Test_ParserUnmarshal_OK(t *testing.T) {
 	var want map[string]any
 	err := json.Unmarshal([]byte(data), &want)
 	if err != nil {
-		t.Fatal("failed prepare test")
+		t.Fatalf("prepare test data: %v", err)
 	}
 
 	dir := t.TempDir()
@@ -42,7 +42,7 @@ func Test_ParserUnmarshal_OK(t *testing.T) {
 	}
 }
 
-func Test_ParserNotJSONFile(t *testing.T) {
+func TestParseUnsupportedExtension(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "test.txt")
 

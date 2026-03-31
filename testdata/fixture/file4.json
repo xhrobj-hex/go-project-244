@@ -1,0 +1,5 @@
+{
+  "follow": false,
+  "timeout": 50,
+  "host": "hexlet.io"
+}
