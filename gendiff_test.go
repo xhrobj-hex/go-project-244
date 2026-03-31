@@ -47,3 +47,46 @@ func TestGenDiffFlatJSONSameDataDifferentKeyOrder(t *testing.T) {
 		t.Errorf("unexpected diff result\nwant:\n%s\ngot:\n%s", want, got)
 	}
 }
+
+func TestGenDiffFlatYAML(t *testing.T) {
+	file1 := filepath.Join("testdata", "fixture", "file1.yml")
+	file2 := filepath.Join("testdata", "fixture", "file2.yml")
+
+	got, err := GenDiff(file1, file2, "stylish")
+	if err != nil {
+		t.Fatalf("GenDiff returned error: %v", err)
+	}
+
+	want := `{
+  - follow: false
+    host: hexlet.io
+  - proxy: 123.234.53.22
+  - timeout: 50
+  + timeout: 20
+  + verbose: true
+}`
+
+	if got != want {
+		t.Errorf("unexpected diff result\nwant:\n%s\ngot:\n%s", want, got)
+	}
+}
+
+func TestGenDiffFlatYAMLSameDataDifferentKeyOrder(t *testing.T) {
+	file1 := filepath.Join("testdata", "fixture", "file3.yml")
+	file2 := filepath.Join("testdata", "fixture", "file4.yml")
+
+	got, err := GenDiff(file1, file2, "stylish")
+	if err != nil {
+		t.Fatalf("GenDiff returned error: %v", err)
+	}
+
+	want := `{
+    follow: false
+    host: hexlet.io
+    timeout: 50
+}`
+
+	if got != want {
+		t.Errorf("unexpected diff result\nwant:\n%s\ngot:\n%s", want, got)
+	}
+}

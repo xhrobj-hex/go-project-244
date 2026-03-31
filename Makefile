@@ -1,7 +1,7 @@
 .PHONY: \
 	build \
 	test test-with-coverage \
-	run \
+	run run-json run-yaml \
 	lint \
 	clean 
 
@@ -15,7 +15,13 @@ test-with-coverage:
 	go test -coverprofile=coverage.out ./...
 
 run: build
+	./bin/gendiff testdata/file1.json testdata/file2.yml
+
+run-json: build
 	./bin/gendiff testdata/file1.json testdata/file2.json
+
+run-yaml: build
+	./bin/gendiff testdata/file1.yml testdata/file2.yml
 
 lint:
 	golangci-lint run

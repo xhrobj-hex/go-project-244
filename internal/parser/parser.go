@@ -6,13 +6,12 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	"gopkg.in/yaml.v3"
 )
 
 func Parse(path string) (map[string]any, error) {
 	ext := strings.ToLower(filepath.Ext(path))
-	if ext != ".json" {
-		return nil, fmt.Errorf("unsupported file format: %s", ext)
-	}
 
 	fileData, err := os.ReadFile(path)
 	if err != nil {
@@ -20,8 +19,20 @@ func Parse(path string) (map[string]any, error) {
 	}
 
 	var data map[string]any // ???: а если массив в корне?
-	if err := json.Unmarshal(fileData, &data); err != nil {
-		return nil, err
+
+	switch ext {
+	case ".json":
+		err = json.Unmarshal(fileData, &data)
+		if err != nil {
+			return nil, err
+		}
+	case ".yml", ".yaml":
+		err = yaml.Unmarshal(fileData, &data)
+		if err != nil {
+			return nil, err
+		}
+	default:
+		return nil, fmt.Errorf("unsupported file format: %s", ext)
 	}
 
 	return data, nil
