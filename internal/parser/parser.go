@@ -2,41 +2,27 @@ package parser
 
 import (
 	"encoding/json"
-	"errors"
-	"io"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
 )
 
 func Parse(path string) (map[string]any, error) {
-	// 1. проверить расширение json
-	ext := filepath.Ext(path)
-	if strings.ToLower(ext) != ".json" {
-		return nil, errors.New("file isn't json")
+	ext := strings.ToLower(filepath.Ext(path))
+	if ext != ".json" {
+		return nil, fmt.Errorf("unsupported file format: %s", ext)
 	}
 
-	// 2. открыть файл
-	file, err := os.Open(path)
-	if err != nil {
-		return nil, err
-	}
-	defer func() {
-		_ = file.Close()
-	}()
-
-	// 3. прочитать содержимое
-	filedata, err := io.ReadAll(file)
+	fileData, err := os.ReadFile(path)
 	if err != nil {
 		return nil, err
 	}
 
-	// 4. распарсить в json
-	var jsondata map[string]any // ???: а если массив в корне?
-	err = json.Unmarshal(filedata, &jsondata)
-	if err != nil {
+	var data map[string]any // ???: а если массив в корне?
+	if err := json.Unmarshal(fileData, &data); err != nil {
 		return nil, err
 	}
 
-	return jsondata, nil
+	return data, nil
 }
