@@ -6,8 +6,8 @@ import (
 )
 
 func TestGenDiff(t *testing.T) {
-	file1 := filepath.Join("testdata", "file1.json")
-	file2 := filepath.Join("testdata", "file2.json")
+	file1 := filepath.Join("testdata", "fixture", "file1.json")
+	file2 := filepath.Join("testdata", "fixture", "file2.json")
 
 	got, err := GenDiff(file1, file2, "stylish")
 	if err != nil {
