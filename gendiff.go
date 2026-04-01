@@ -40,33 +40,29 @@ func GenDiff(filepath1, filepath2, format string) (string, error) {
 	sort.Strings(keysSorted)
 
 	// 5. пройтись по ключам и собрать строки diff
-	diff := []string{}
+	diff := make([]string, 0)
+
 	for _, key := range keysSorted {
 		v1, ok1 := data1[key]
 		v2, ok2 := data2[key]
 
-		if !ok1 {
+		switch {
+		case !ok1:
 			d := fmt.Sprintf("  + %s: %v", key, v2)
 			diff = append(diff, d)
-			continue
-		}
-
-		if !ok2 {
+		case !ok2:
 			d := fmt.Sprintf("  - %s: %v", key, v1)
 			diff = append(diff, d)
-			continue
-		}
-
-		if !reflect.DeepEqual(v1, v2) {
+		case !reflect.DeepEqual(v1, v2):
 			d := fmt.Sprintf("  - %s: %v", key, v1)
 			diff = append(diff, d)
+
 			d = fmt.Sprintf("  + %s: %v", key, v2)
 			diff = append(diff, d)
-			continue
+		default:
+			d := fmt.Sprintf("    %s: %v", key, v1)
+			diff = append(diff, d)
 		}
-
-		d := fmt.Sprintf("    %s: %v", key, v1)
-		diff = append(diff, d)
 	}
 
 	// 6. склеить все в итоговую строку
