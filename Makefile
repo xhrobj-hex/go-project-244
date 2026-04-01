@@ -15,13 +15,13 @@ test-with-coverage:
 	go test -coverprofile=coverage.out ./...
 
 run: build
-	./bin/gendiff testdata/file1.json testdata/file2.yml
+	./bin/gendiff testdata/fixture/file5.json testdata/fixture/file6.yml
 
 run-json: build
-	./bin/gendiff testdata/file1.json testdata/file2.json
+	./bin/gendiff testdata/fixture/file5.json testdata/fixture/file6.json
 
 run-yaml: build
-	./bin/gendiff testdata/file1.yml testdata/file2.yml
+	./bin/gendiff testdata/fixture/file5.yml testdata/fixture/file6.yml
 
 lint:
 	golangci-lint run
