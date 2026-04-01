@@ -33,20 +33,20 @@ func run() error {
 				return fmt.Errorf("expected 2 arguments, got %d", cmd.Args().Len())
 			}
 
-			filepath1 := cmd.Args().First()
-			filepath2 := cmd.Args().Get(1)
+			filePath1 := cmd.Args().First()
+			filePath2 := cmd.Args().Get(1)
 
 			format := cmd.String("format")
 
-			return genDiff(filepath1, filepath2, format)
+			return genDiff(filePath1, filePath2, format)
 		},
 	}
 
 	return cmd.Run(context.Background(), os.Args)
 }
 
-func genDiff(filepath1, filepath2, format string) error {
-	diff, err := code.GenDiff(filepath1, filepath2, format)
+func genDiff(leftPath, rightPath, format string) error {
+	diff, err := code.GenDiff(leftPath, rightPath, format)
 	if err != nil {
 		return err
 	}

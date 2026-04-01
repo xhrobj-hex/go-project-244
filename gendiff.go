@@ -8,18 +8,20 @@ import (
 	"strings"
 )
 
+// GenDiff вычисляет различия между двумя файлами и возвращает их
+// в виде строки в указанном формате.
 func GenDiff(leftPath, rightPath, format string) (string, error) {
-	_ = format // NOTE: пока не используем
+	_ = format // NOTE: пока не используем ...
 
 	leftData, rightData, err := parseFiles(leftPath, rightPath)
 	if err != nil {
 		return "", err
 	}
 
-	keysSorted := sortedKeys(leftData, rightData)
-	diff := buildDiff(leftData, rightData, keysSorted)
+	keys := sortedKeys(leftData, rightData)
+	diff := buildDiff(leftData, rightData, keys)
 
-	// склеить diff в итоговую строку
+	// ... пока просто "склеить diff в итоговую строку"
 	r := fmt.Sprintf("{\n%s\n}", strings.Join(diff, "\n"))
 
 	return r, nil
@@ -62,27 +64,25 @@ func buildDiff(leftData, rightData map[string]any, keys []string) []string {
 	diff := make([]string, 0, len(keys))
 
 	for _, key := range keys {
-		v1, ok1 := leftData[key]
-		v2, ok2 := rightData[key]
+		leftValue, leftOK := leftData[key]
+		rightValue, rightOK := rightData[key]
 
 		switch {
-		case !ok1:
-			d := fmt.Sprintf("  + %s: %v", key, v2)
-			diff = append(diff, d)
-		case !ok2:
-			d := fmt.Sprintf("  - %s: %v", key, v1)
-			diff = append(diff, d)
-		case !reflect.DeepEqual(v1, v2):
-			d := fmt.Sprintf("  - %s: %v", key, v1)
-			diff = append(diff, d)
-
-			d = fmt.Sprintf("  + %s: %v", key, v2)
-			diff = append(diff, d)
+		case !leftOK:
+			diff = append(diff, formatLine("  +", key, rightValue))
+		case !rightOK:
+			diff = append(diff, formatLine("  -", key, leftValue))
+		case !reflect.DeepEqual(leftValue, rightValue):
+			diff = append(diff, formatLine("  -", key, leftValue))
+			diff = append(diff, formatLine("  +", key, rightValue))
 		default:
-			d := fmt.Sprintf("    %s: %v", key, v1)
-			diff = append(diff, d)
+			diff = append(diff, formatLine("   ", key, leftValue))
 		}
 	}
 
 	return diff
+}
+
+func formatLine(prefix, key string, value any) string {
+	return fmt.Sprintf("%s %s: %v", prefix, key, value)
 }

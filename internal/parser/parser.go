@@ -10,10 +10,10 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-func Parse(path string) (map[string]any, error) {
-	ext := strings.ToLower(filepath.Ext(path))
+func Parse(filePath string) (map[string]any, error) {
+	ext := strings.ToLower(filepath.Ext(filePath))
 
-	fileData, err := os.ReadFile(path)
+	fileData, err := os.ReadFile(filePath)
 	if err != nil {
 		return nil, err
 	}
