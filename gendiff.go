@@ -3,29 +3,32 @@ package code
 import (
 	"code/internal/parser"
 	"fmt"
+	"reflect"
 	"sort"
 	"strings"
 )
 
 func GenDiff(filepath1, filepath2, format string) (string, error) {
+	_ = format // NOTE: пока не используем
+
 	// 1. распарсить первый файл
-	json1, err := parser.Parse(filepath1)
+	data1, err := parser.Parse(filepath1)
 	if err != nil {
 		return "", err
 	}
 
 	// 2. распарсить второй файл
-	json2, err := parser.Parse(filepath2)
+	data2, err := parser.Parse(filepath2)
 	if err != nil {
 		return "", err
 	}
 
 	// 3. собрать все ключи из обоих объектов
 	keys := map[string]string{}
-	for k := range json1 {
+	for k := range data1 {
 		keys[k] = ""
 	}
-	for k := range json2 {
+	for k := range data2 {
 		keys[k] = ""
 	}
 
@@ -36,29 +39,32 @@ func GenDiff(filepath1, filepath2, format string) (string, error) {
 	}
 	sort.Strings(keysSorted)
 
-	// 5. пройтись по ним и собрать строки diff
+	// 5. пройтись по ключам и собрать строки diff
 	diff := []string{}
 	for _, key := range keysSorted {
-		v1, ok := json1[key]
-		if !ok {
-			v2 := json2[key]
+		v1, ok1 := data1[key]
+		v2, ok2 := data2[key]
+
+		if !ok1 {
 			d := fmt.Sprintf("  + %s: %v", key, v2)
 			diff = append(diff, d)
 			continue
 		}
-		v2, ok := json2[key]
-		if !ok {
+
+		if !ok2 {
 			d := fmt.Sprintf("  - %s: %v", key, v1)
 			diff = append(diff, d)
 			continue
 		}
-		if v1 != v2 {
+
+		if !reflect.DeepEqual(v1, v2) {
 			d := fmt.Sprintf("  - %s: %v", key, v1)
 			diff = append(diff, d)
 			d = fmt.Sprintf("  + %s: %v", key, v2)
 			diff = append(diff, d)
 			continue
 		}
+
 		d := fmt.Sprintf("    %s: %v", key, v1)
 		diff = append(diff, d)
 	}
