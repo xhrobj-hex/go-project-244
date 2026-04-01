@@ -39,10 +39,19 @@ func GenDiff(filepath1, filepath2, format string) (string, error) {
 	}
 	sort.Strings(keysSorted)
 
-	// 5. пройтись по ключам и собрать строки diff
+	// 5. пройтись по ключам и собрать строки в diff (пока массив, но в итоге нужно будет дерево)
+	diff := buildDiff(data1, data2, keysSorted)
+
+	// 6. склеить все в итоговую строку
+	r := fmt.Sprintf("{\n%s\n}", strings.Join(diff, "\n"))
+
+	return r, nil
+}
+
+func buildDiff(data1, data2 map[string]any, keys []string) []string {
 	diff := make([]string, 0)
 
-	for _, key := range keysSorted {
+	for _, key := range keys {
 		v1, ok1 := data1[key]
 		v2, ok2 := data2[key]
 
@@ -65,8 +74,5 @@ func GenDiff(filepath1, filepath2, format string) (string, error) {
 		}
 	}
 
-	// 6. склеить все в итоговую строку
-	r := fmt.Sprintf("{\n%s\n}", strings.Join(diff, "\n"))
-
-	return r, nil
+	return diff
 }
