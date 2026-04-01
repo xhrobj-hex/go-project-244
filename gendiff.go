@@ -8,22 +8,16 @@ import (
 	"strings"
 )
 
-func GenDiff(filepath1, filepath2, format string) (string, error) {
+func GenDiff(filePath1, filepath2, format string) (string, error) {
 	_ = format // NOTE: пока не используем
 
-	// 1. распарсить первый файл
-	data1, err := parser.Parse(filepath1)
+	// распарсить файлы
+	data1, data2, err := parseFiles(filePath1, filepath2)
 	if err != nil {
 		return "", err
 	}
 
-	// 2. распарсить второй файл
-	data2, err := parser.Parse(filepath2)
-	if err != nil {
-		return "", err
-	}
-
-	// 3. собрать все ключи из обоих объектов
+	// собрать все ключи из обоих объектов
 	keys := map[string]struct{}{}
 	for k := range data1 {
 		keys[k] = struct{}{}
@@ -32,20 +26,36 @@ func GenDiff(filepath1, filepath2, format string) (string, error) {
 		keys[k] = struct{}{}
 	}
 
-	// 4. отсортировать ключи
+	// отсортировать ключи
 	keysSorted := make([]string, 0, len(keys))
 	for k := range keys {
 		keysSorted = append(keysSorted, k)
 	}
 	sort.Strings(keysSorted)
 
-	// 5. пройтись по ключам и собрать строки в diff (пока массив, но в итоге нужно будет дерево)
+	// пройтись по ключам и собрать строки в diff (пока массив, но в итоге нужно будет дерево)
 	diff := buildDiff(data1, data2, keysSorted)
 
-	// 6. склеить все в итоговую строку
+	// склеить все в итоговую строку
 	r := fmt.Sprintf("{\n%s\n}", strings.Join(diff, "\n"))
 
 	return r, nil
+}
+
+func parseFiles(filePath1, filePath2 string) (map[string]any, map[string]any, error) {
+	// 1. распарсить первый файл
+	fileData1, err := parser.Parse(filePath1)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	// 2. распарсить второй файл
+	fileData2, err := parser.Parse(filePath2)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return fileData1, fileData2, nil
 }
 
 func buildDiff(data1, data2 map[string]any, keys []string) []string {
