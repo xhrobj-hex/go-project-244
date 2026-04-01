@@ -24,16 +24,16 @@ func GenDiff(filepath1, filepath2, format string) (string, error) {
 	}
 
 	// 3. собрать все ключи из обоих объектов
-	keys := map[string]string{}
+	keys := map[string]struct{}{}
 	for k := range data1 {
-		keys[k] = ""
+		keys[k] = struct{}{}
 	}
 	for k := range data2 {
-		keys[k] = ""
+		keys[k] = struct{}{}
 	}
 
 	// 4. отсортировать ключи
-	keysSorted := []string{}
+	keysSorted := make([]string, 0, len(keys))
 	for k := range keys {
 		keysSorted = append(keysSorted, k)
 	}
