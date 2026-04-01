@@ -8,23 +8,24 @@ import (
 	"strings"
 )
 
+type diff struct {
+	Key   string
+	Kind  string
+	Left  any
+	Right any
+}
+
 // GenDiff вычисляет различия между двумя файлами и возвращает их
 // в виде строки в указанном формате.
 func GenDiff(leftPath, rightPath, format string) (string, error) {
-	_ = format // NOTE: пока не используем ...
-
 	leftData, rightData, err := parseFiles(leftPath, rightPath)
 	if err != nil {
 		return "", err
 	}
 
-	keys := sortedKeys(leftData, rightData)
-	diff := buildDiff(leftData, rightData, keys)
+	diffs := buildDiff(leftData, rightData)
 
-	// ... пока просто "склеить diff в итоговую строку"
-	r := fmt.Sprintf("{\n%s\n}", strings.Join(diff, "\n"))
-
-	return r, nil
+	return formatDiffs(diffs, format), nil
 }
 
 func parseFiles(path1, path2 string) (map[string]any, map[string]any, error) {
@@ -39,6 +40,51 @@ func parseFiles(path1, path2 string) (map[string]any, map[string]any, error) {
 	}
 
 	return data1, data2, nil
+}
+
+func buildDiff(leftData, rightData map[string]any) []diff {
+	keys := sortedKeys(leftData, rightData)
+
+	diffs := make([]diff, 0, len(keys))
+
+	for _, key := range keys {
+		leftValue, leftOK := leftData[key]
+		rightValue, rightOK := rightData[key]
+
+		switch {
+		case !leftOK:
+			diffs = append(diffs, diff{
+				Key:   key,
+				Kind:  "right",
+				Left:  nil,
+				Right: rightValue,
+			})
+		case !rightOK:
+			diffs = append(diffs, diff{
+				Key:   key,
+				Kind:  "left",
+				Left:  leftValue,
+				Right: nil,
+			})
+		case !reflect.DeepEqual(leftValue, rightValue):
+			diffs = append(diffs, diff{
+				Key:   key,
+				Kind:  "both",
+				Left:  leftValue,
+				Right: rightValue,
+			})
+
+		default:
+			diffs = append(diffs, diff{
+				Key:   key,
+				Kind:  "tie",
+				Left:  leftValue,
+				Right: nil, // NOTE: для "tie" храним только Left
+			})
+		}
+	}
+
+	return diffs
 }
 
 func sortedKeys(data1, data2 map[string]any) []string {
@@ -60,27 +106,28 @@ func sortedKeys(data1, data2 map[string]any) []string {
 	return keys
 }
 
-func buildDiff(leftData, rightData map[string]any, keys []string) []string {
-	diff := make([]string, 0, len(keys))
+func formatDiffs(diffs []diff, format string) string {
+	_ = format // NOTE: пока не используем ...
 
-	for _, key := range keys {
-		leftValue, leftOK := leftData[key]
-		rightValue, rightOK := rightData[key]
+	r := make([]string, 0, len(diffs))
 
-		switch {
-		case !leftOK:
-			diff = append(diff, formatLine("  +", key, rightValue))
-		case !rightOK:
-			diff = append(diff, formatLine("  -", key, leftValue))
-		case !reflect.DeepEqual(leftValue, rightValue):
-			diff = append(diff, formatLine("  -", key, leftValue))
-			diff = append(diff, formatLine("  +", key, rightValue))
+	for _, diff := range diffs {
+		switch diff.Kind {
+		case "right":
+			r = append(r, formatLine("  +", diff.Key, diff.Right))
+		case "left":
+			r = append(r, formatLine("  -", diff.Key, diff.Left))
+		case "both":
+			r = append(r, formatLine("  -", diff.Key, diff.Left))
+			r = append(r, formatLine("  +", diff.Key, diff.Right))
+		case "tie":
+			r = append(r, formatLine("   ", diff.Key, diff.Left))
 		default:
-			diff = append(diff, formatLine("   ", key, leftValue))
+			r = append(r, "  ! error <--")
 		}
 	}
 
-	return diff
+	return fmt.Sprintf("{\n%s\n}", strings.Join(r, "\n"))
 }
 
 func formatLine(prefix, key string, value any) string {
