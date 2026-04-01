@@ -10,6 +10,7 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+// Parse читает JSON/YAML-файл и возвращает его содержимое в виде map[string]any.
 func Parse(filePath string) (map[string]any, error) {
 	ext := strings.ToLower(filepath.Ext(filePath))
 
