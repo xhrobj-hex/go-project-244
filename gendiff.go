@@ -1,9 +1,9 @@
 package code
 
 import (
+	"code/internal/diff"
 	"code/internal/parser"
 	"fmt"
-	"reflect"
 	"sort"
 	"strings"
 )
@@ -13,24 +13,6 @@ const (
 	indentWidth = 4
 )
 
-type nodeKind string
-
-const (
-	kindAdded     nodeKind = "added"
-	kindRemoved   nodeKind = "removed"
-	kindChanged   nodeKind = "changed"
-	kindUnchanged nodeKind = "unchanged"
-	kindNested    nodeKind = "nested"
-)
-
-type diffNode struct {
-	Key      string
-	Kind     nodeKind
-	Left     any
-	Right    any
-	Children []diffNode
-}
-
 // GenDiff вычисляет различия между двумя файлами и возвращает их
 // в виде строки в указанном формате.
 func GenDiff(leftPath, rightPath, format string) (string, error) {
@@ -39,14 +21,14 @@ func GenDiff(leftPath, rightPath, format string) (string, error) {
 		return "", err
 	}
 
-	tree := buildDiff(leftData, rightData)
+	tree := diff.BuildTree(leftData, rightData)
 	rootDepth := 1
 
 	return formatTree(tree, rootDepth, format), nil
 }
 
 func parseFiles(leftPath, rightPath string) (map[string]any, map[string]any, error) {
-	letfData, err := parser.Parse(leftPath)
+	leftData, err := parser.Parse(leftPath)
 	if err != nil {
 		return nil, nil, fmt.Errorf("parse left file: %w", err)
 	}
@@ -56,110 +38,32 @@ func parseFiles(leftPath, rightPath string) (map[string]any, map[string]any, err
 		return nil, nil, fmt.Errorf("parse right file: %w", err)
 	}
 
-	return letfData, rightData, nil
+	return leftData, rightData, nil
 }
 
-func buildDiff(leftData, rightData map[string]any) []diffNode {
-	keys := sortedUnionKeys(leftData, rightData)
-
-	tree := make([]diffNode, 0, len(keys))
-
-	for _, key := range keys {
-		leftValue, leftOK := leftData[key]
-		rightValue, rightOK := rightData[key]
-
-		leftObj, leftIsObj := asMap(leftValue)
-		rightObj, rightIsObj := asMap(rightValue)
-
-		switch {
-		case !leftOK:
-			tree = append(tree, diffNode{
-				Key:   key,
-				Kind:  kindAdded,
-				Right: rightValue,
-			})
-
-		case !rightOK:
-			tree = append(tree, diffNode{
-				Key:  key,
-				Kind: kindRemoved,
-				Left: leftValue,
-			})
-
-		case leftIsObj && rightIsObj:
-			tree = append(tree, diffNode{
-				Key:      key,
-				Kind:     kindNested,
-				Children: buildDiff(leftObj, rightObj),
-			})
-
-		case !reflect.DeepEqual(leftValue, rightValue):
-			tree = append(tree, diffNode{
-				Key:   key,
-				Kind:  kindChanged,
-				Left:  leftValue,
-				Right: rightValue,
-			})
-
-		default:
-			tree = append(tree, diffNode{
-				Key:  key,
-				Kind: kindUnchanged,
-				Left: leftValue, // NOTE: для "unchanged" храним только Left
-			})
-		}
-	}
-
-	return tree
-}
-
-func sortedUnionKeys(data1, data2 map[string]any) []string {
-	set := make(map[string]struct{})
-	for k := range data1 {
-		set[k] = struct{}{}
-	}
-	for k := range data2 {
-		set[k] = struct{}{}
-	}
-
-	keys := make([]string, 0, len(set))
-	for k := range set {
-		keys = append(keys, k)
-	}
-
-	sort.Strings(keys)
-
-	return keys
-}
-
-func asMap(value any) (map[string]any, bool) {
-	obj, ok := value.(map[string]any)
-	return obj, ok
-}
-
-func formatTree(tree []diffNode, depth int, format string) string {
+func formatTree(tree []diff.DiffNode, depth int, format string) string {
 	_ = format // NOTE: пока не используем ...
 
 	lines := []string{"{"}
 
 	for _, node := range tree {
 		switch node.Kind {
-		case kindAdded:
+		case diff.KindAdded:
 			lines = append(lines, formatLine(depth, "+", node.Key, formatValue(node.Right, depth+1)))
 
-		case kindRemoved:
+		case diff.KindRemoved:
 			lines = append(lines, formatLine(depth, "-", node.Key, formatValue(node.Left, depth+1)))
 
-		case kindChanged:
+		case diff.KindChanged:
 			lines = append(lines,
 				formatLine(depth, "-", node.Key, formatValue(node.Left, depth+1)),
 				formatLine(depth, "+", node.Key, formatValue(node.Right, depth+1)),
 			)
 
-		case kindUnchanged:
+		case diff.KindUnchanged:
 			lines = append(lines, formatLine(depth, " ", node.Key, formatValue(node.Left, depth+1)))
 
-		case kindNested:
+		case diff.KindNested:
 			lines = append(lines, formatLine(depth, " ", node.Key, formatTree(node.Children, depth+1, format)))
 
 		default:
