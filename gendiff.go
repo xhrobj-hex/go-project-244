@@ -13,9 +13,19 @@ const (
 	indentWidth = 4
 )
 
+type nodeKind string
+
+const (
+	kindAdded     nodeKind = "added"
+	kindRemoved   nodeKind = "removed"
+	kindChanged   nodeKind = "changed"
+	kindUnchanged nodeKind = "unchanged"
+	kindNested    nodeKind = "nested"
+)
+
 type diffNode struct {
 	Key      string
-	Kind     string // NOTE: right/left/changed/unchanged/nested
+	Kind     nodeKind
 	Left     any
 	Right    any
 	Children []diffNode
@@ -30,26 +40,27 @@ func GenDiff(leftPath, rightPath, format string) (string, error) {
 	}
 
 	tree := buildDiff(leftData, rightData)
+	rootDepth := 1
 
-	return formatTree(tree, 1, format), nil
+	return formatTree(tree, rootDepth, format), nil
 }
 
-func parseFiles(path1, path2 string) (map[string]any, map[string]any, error) {
-	data1, err := parser.Parse(path1)
+func parseFiles(leftPath, rightPath string) (map[string]any, map[string]any, error) {
+	letfData, err := parser.Parse(leftPath)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, fmt.Errorf("parse left file: %w", err)
 	}
 
-	data2, err := parser.Parse(path2)
+	rightData, err := parser.Parse(rightPath)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, fmt.Errorf("parse right file: %w", err)
 	}
 
-	return data1, data2, nil
+	return letfData, rightData, nil
 }
 
 func buildDiff(leftData, rightData map[string]any) []diffNode {
-	keys := sortedKeys(leftData, rightData)
+	keys := sortedUnionKeys(leftData, rightData)
 
 	tree := make([]diffNode, 0, len(keys))
 
@@ -64,28 +75,28 @@ func buildDiff(leftData, rightData map[string]any) []diffNode {
 		case !leftOK:
 			tree = append(tree, diffNode{
 				Key:   key,
-				Kind:  "right",
+				Kind:  kindAdded,
 				Right: rightValue,
 			})
 
 		case !rightOK:
 			tree = append(tree, diffNode{
 				Key:  key,
-				Kind: "left",
+				Kind: kindRemoved,
 				Left: leftValue,
 			})
 
 		case leftIsObj && rightIsObj:
 			tree = append(tree, diffNode{
 				Key:      key,
-				Kind:     "nested",
+				Kind:     kindNested,
 				Children: buildDiff(leftObj, rightObj),
 			})
 
 		case !reflect.DeepEqual(leftValue, rightValue):
 			tree = append(tree, diffNode{
 				Key:   key,
-				Kind:  "changed",
+				Kind:  kindChanged,
 				Left:  leftValue,
 				Right: rightValue,
 			})
@@ -93,7 +104,7 @@ func buildDiff(leftData, rightData map[string]any) []diffNode {
 		default:
 			tree = append(tree, diffNode{
 				Key:  key,
-				Kind: "unchanged",
+				Kind: kindUnchanged,
 				Left: leftValue, // NOTE: для "unchanged" храним только Left
 			})
 		}
@@ -102,7 +113,7 @@ func buildDiff(leftData, rightData map[string]any) []diffNode {
 	return tree
 }
 
-func sortedKeys(data1, data2 map[string]any) []string {
+func sortedUnionKeys(data1, data2 map[string]any) []string {
 	set := make(map[string]struct{})
 	for k := range data1 {
 		set[k] = struct{}{}
@@ -133,26 +144,26 @@ func formatTree(tree []diffNode, depth int, format string) string {
 
 	for _, node := range tree {
 		switch node.Kind {
-		case "right":
+		case kindAdded:
 			lines = append(lines, formatLine(depth, "+", node.Key, formatValue(node.Right, depth+1)))
 
-		case "left":
+		case kindRemoved:
 			lines = append(lines, formatLine(depth, "-", node.Key, formatValue(node.Left, depth+1)))
 
-		case "changed":
+		case kindChanged:
 			lines = append(lines,
 				formatLine(depth, "-", node.Key, formatValue(node.Left, depth+1)),
 				formatLine(depth, "+", node.Key, formatValue(node.Right, depth+1)),
 			)
 
-		case "unchanged":
+		case kindUnchanged:
 			lines = append(lines, formatLine(depth, " ", node.Key, formatValue(node.Left, depth+1)))
 
-		case "nested":
+		case kindNested:
 			lines = append(lines, formatLine(depth, " ", node.Key, formatTree(node.Children, depth+1, format)))
 
 		default:
-			lines = append(lines, "(о_0) error <--")
+			panic(fmt.Sprintf("(о_0) unknown diff node kind: %q", node.Kind))
 		}
 	}
 
