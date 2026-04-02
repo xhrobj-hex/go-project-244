@@ -8,3 +8,6 @@ __MACOSX/
 # build artifacts
 bin/
 coverage.out
+
+# asciinema
+*.cast
