@@ -212,8 +212,12 @@ func TestGenDiffJSONJSON(t *testing.T) {
 		t.Fatalf("GenDiff returned error: %v", err)
 	}
 
-	var decoded any
+	var decoded map[string]any
 	if err := json.Unmarshal([]byte(got), &decoded); err != nil {
 		t.Fatalf("invalid json output: %v", err)
+	}
+
+	if len(decoded) == 0 {
+		t.Fatal("json output must not be empty")
 	}
 }
