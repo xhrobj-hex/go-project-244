@@ -19,7 +19,7 @@ func Parse(filePath string) (map[string]any, error) {
 		return nil, err
 	}
 
-	var data map[string]any // ???: а если массив в корне?
+	var data map[string]any
 
 	switch ext {
 	case ".json":

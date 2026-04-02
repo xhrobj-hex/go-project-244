@@ -30,11 +30,11 @@ const (
 // Хранит информацию о ключе, типе изменения и дочерних узлах
 // для вложенных объектов.
 type DiffNode struct {
-	Key      string
-	Kind     NodeKind
-	Left     any
-	Right    any
-	Children []DiffNode
+	Key      string     `json:"key"`
+	Kind     NodeKind   `json:"type"`
+	Left     any        `json:"old_value,omitempty"`
+	Right    any        `json:"new_value,omitempty"`
+	Children []DiffNode `json:"children,omitempty"`
 }
 
 // BuildTree строит дерево различий для двух объектов,

@@ -1,11 +1,12 @@
 package code
 
 import (
+	"encoding/json"
 	"path/filepath"
 	"testing"
 )
 
-func TestGenDiffFlatJSON(t *testing.T) {
+func TestGenDiffFlatJSONStylish(t *testing.T) {
 	fileLeft := filepath.Join("testdata", "fixture", "file1.json")
 	fileRight := filepath.Join("testdata", "fixture", "file2.json")
 
@@ -28,7 +29,7 @@ func TestGenDiffFlatJSON(t *testing.T) {
 	}
 }
 
-func TestGenDiffFlatYAML(t *testing.T) {
+func TestGenDiffFlatYAMLStylish(t *testing.T) {
 	fileLeft := filepath.Join("testdata", "fixture", "file1.yml")
 	fileRight := filepath.Join("testdata", "fixture", "file2.yml")
 
@@ -51,7 +52,7 @@ func TestGenDiffFlatYAML(t *testing.T) {
 	}
 }
 
-func TestGenDiffFlatJSONSameDataDifferentKeyOrder(t *testing.T) {
+func TestGenDiffFlatJSONSameDataDifferentKeyOrderStylish(t *testing.T) {
 	fileLeft := filepath.Join("testdata", "fixture", "file3.json")
 	fileRight := filepath.Join("testdata", "fixture", "file4.json")
 
@@ -71,7 +72,7 @@ func TestGenDiffFlatJSONSameDataDifferentKeyOrder(t *testing.T) {
 	}
 }
 
-func TestGenDiffFlatYAMLSameDataDifferentKeyOrder(t *testing.T) {
+func TestGenDiffFlatYAMLSameDataDifferentKeyOrderStylish(t *testing.T) {
 	fileLeft := filepath.Join("testdata", "fixture", "file3.yml")
 	fileRight := filepath.Join("testdata", "fixture", "file4.yml")
 
@@ -91,7 +92,7 @@ func TestGenDiffFlatYAMLSameDataDifferentKeyOrder(t *testing.T) {
 	}
 }
 
-func TestGenDiffJSONNested(t *testing.T) {
+func TestGenDiffJSONNestedStylish(t *testing.T) {
 	fileLeft := filepath.Join("testdata", "fixture", "file5.json")
 	fileRight := filepath.Join("testdata", "fixture", "file6.json")
 
@@ -199,5 +200,20 @@ Property 'group3' was added with value: [complex value]`
 
 	if got != want {
 		t.Errorf("unexpected plain diff result\nwant:\n%s\ngot:\n%s", want, got)
+	}
+}
+
+func TestGenDiffJSONJSON(t *testing.T) {
+	fileLeft := filepath.Join("testdata", "fixture", "file5.json")
+	fileRight := filepath.Join("testdata", "fixture", "file6.json")
+
+	got, err := GenDiff(fileLeft, fileRight, "json")
+	if err != nil {
+		t.Fatalf("GenDiff returned error: %v", err)
+	}
+
+	var decoded any
+	if err := json.Unmarshal([]byte(got), &decoded); err != nil {
+		t.Fatalf("invalid json output: %v", err)
 	}
 }

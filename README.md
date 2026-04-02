@@ -31,7 +31,7 @@ make build
 
 ## Использование
 
-```bash
+```text
 ./bin/gendiff <filepath1> <filepath2> [flags]
 ```
 
@@ -44,6 +44,7 @@ make build
 
 - `stylish` — формат по умолчанию
 - `plain` — плоское текстовое описание изменений
+- `json` — вывод результата в формате JSON
 
 ### Примеры
 
@@ -71,10 +72,16 @@ make build
 ./bin/gendiff testdata/fixture/file5.json testdata/fixture/file6.yml
 ```
 
-Вывод в формате `plain`
+Вывести результат в формате `plain`:
 
 ```bash
 ./bin/gendiff --format plain testdata/fixture/file5.json testdata/fixture/file6.json
+```
+
+Вывести результат в формате `json`:
+
+```bash
+./bin/gendiff --format json testdata/fixture/file5.json testdata/fixture/file6.json
 ```
 
 ---

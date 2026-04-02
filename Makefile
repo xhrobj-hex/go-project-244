@@ -3,6 +3,7 @@
 	test test-with-coverage \
 	run run-json run-yaml \
 	run-plain run-json-plain run-yaml-plain \
+	run-json-json run-yaml-json \
 	lint \
 	clean 
 
@@ -32,6 +33,12 @@ run-json-plain: build
 
 run-yaml-plain: build
 	./bin/gendiff -f plain testdata/fixture/file5.yml testdata/fixture/file6.yml
+
+run-json-json: build
+	./bin/gendiff -f json testdata/fixture/file5.json testdata/fixture/file6.json
+
+run-yaml-json: build
+	./bin/gendiff -f json testdata/fixture/file5.yml testdata/fixture/file6.yml
 
 lint:
 	golangci-lint run
