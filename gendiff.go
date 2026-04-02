@@ -8,11 +8,12 @@ import (
 	"strings"
 )
 
-type diff struct {
-	Key   string
-	Kind  string
-	Left  any
-	Right any
+type diffNode struct {
+	Key      string
+	Kind     string // NOTE: right/left/both/tie/deep
+	Left     any
+	Right    any
+	Children []diffNode
 }
 
 // GenDiff вычисляет различия между двумя файлами и возвращает их
@@ -23,9 +24,9 @@ func GenDiff(leftPath, rightPath, format string) (string, error) {
 		return "", err
 	}
 
-	diffs := buildDiff(leftData, rightData)
+	tree := buildDiff(leftData, rightData)
 
-	return formatDiffs(diffs, format), nil
+	return formatTree(tree, 1, format), nil
 }
 
 func parseFiles(path1, path2 string) (map[string]any, map[string]any, error) {
@@ -42,32 +43,42 @@ func parseFiles(path1, path2 string) (map[string]any, map[string]any, error) {
 	return data1, data2, nil
 }
 
-func buildDiff(leftData, rightData map[string]any) []diff {
+func buildDiff(leftData, rightData map[string]any) []diffNode {
 	keys := sortedKeys(leftData, rightData)
 
-	diffs := make([]diff, 0, len(keys))
+	tree := make([]diffNode, 0, len(keys))
 
 	for _, key := range keys {
 		leftValue, leftOK := leftData[key]
 		rightValue, rightOK := rightData[key]
 
+		leftObj, leftIsObj := asMap(leftValue)
+		rightObj, rightIsObj := asMap(rightValue)
+
 		switch {
 		case !leftOK:
-			diffs = append(diffs, diff{
+			tree = append(tree, diffNode{
 				Key:   key,
 				Kind:  "right",
-				Left:  nil,
 				Right: rightValue,
 			})
+
 		case !rightOK:
-			diffs = append(diffs, diff{
-				Key:   key,
-				Kind:  "left",
-				Left:  leftValue,
-				Right: nil,
+			tree = append(tree, diffNode{
+				Key:  key,
+				Kind: "left",
+				Left: leftValue,
 			})
+
+		case leftIsObj && rightIsObj:
+			tree = append(tree, diffNode{
+				Key:      key,
+				Kind:     "deep",
+				Children: buildDiff(leftObj, rightObj),
+			})
+
 		case !reflect.DeepEqual(leftValue, rightValue):
-			diffs = append(diffs, diff{
+			tree = append(tree, diffNode{
 				Key:   key,
 				Kind:  "both",
 				Left:  leftValue,
@@ -75,16 +86,15 @@ func buildDiff(leftData, rightData map[string]any) []diff {
 			})
 
 		default:
-			diffs = append(diffs, diff{
-				Key:   key,
-				Kind:  "tie",
-				Left:  leftValue,
-				Right: nil, // NOTE: для "tie" храним только Left
+			tree = append(tree, diffNode{
+				Key:  key,
+				Kind: "tie",
+				Left: leftValue, // NOTE: для "tie" храним только Left
 			})
 		}
 	}
 
-	return diffs
+	return tree
 }
 
 func sortedKeys(data1, data2 map[string]any) []string {
@@ -106,30 +116,140 @@ func sortedKeys(data1, data2 map[string]any) []string {
 	return keys
 }
 
-func formatDiffs(diffs []diff, format string) string {
+func asMap(value any) (map[string]any, bool) {
+	obj, ok := value.(map[string]any)
+	return obj, ok
+}
+
+func formatTree(tree []diffNode, level int, format string) string {
 	_ = format // NOTE: пока не используем ...
 
-	r := make([]string, 0, len(diffs))
+	lines := []string{"{"}
 
-	for _, diff := range diffs {
-		switch diff.Kind {
+	for _, node := range tree {
+		switch node.Kind {
 		case "right":
-			r = append(r, formatLine("  +", diff.Key, diff.Right))
+			lines = append(lines,
+				fmt.Sprintf(
+					"%s+ %s: %s",
+					nodePadding(level),
+					node.Key,
+					formatValue(node.Right, level+1),
+				),
+			)
+
 		case "left":
-			r = append(r, formatLine("  -", diff.Key, diff.Left))
+			lines = append(lines,
+				fmt.Sprintf(
+					"%s- %s: %s",
+					nodePadding(level),
+					node.Key,
+					formatValue(node.Left, level+1),
+				),
+			)
+
 		case "both":
-			r = append(r, formatLine("  -", diff.Key, diff.Left))
-			r = append(r, formatLine("  +", diff.Key, diff.Right))
+			lines = append(lines,
+				fmt.Sprintf(
+					"%s- %s: %s",
+					nodePadding(level),
+					node.Key,
+					formatValue(node.Left, level+1),
+				),
+			)
+			lines = append(lines,
+				fmt.Sprintf(
+					"%s+ %s: %s",
+					nodePadding(level),
+					node.Key,
+					formatValue(node.Right, level+1),
+				),
+			)
+
 		case "tie":
-			r = append(r, formatLine("   ", diff.Key, diff.Left))
+			lines = append(lines,
+				fmt.Sprintf(
+					"%s%s%s%s: %s",
+					nodePadding(level),
+					paddingChar(),
+					paddingChar(),
+					node.Key,
+					formatValue(node.Left, level+1),
+				),
+			)
+
+		case "deep":
+			lines = append(lines,
+				fmt.Sprintf(
+					"%s%s%s%s: %s",
+					nodePadding(level),
+					paddingChar(),
+					paddingChar(),
+					node.Key,
+					formatTree(node.Children, level+1, format),
+				),
+			)
+
 		default:
-			r = append(r, "  ! error <--")
+			lines = append(lines, "**! error <--")
 		}
 	}
 
-	return fmt.Sprintf("{\n%s\n}", strings.Join(r, "\n"))
+	lines = append(lines, fmt.Sprintf("%s}", closePadding(level)))
+
+	return strings.Join(lines, "\n")
 }
 
-func formatLine(prefix, key string, value any) string {
-	return fmt.Sprintf("%s %s: %v", prefix, key, value)
+func sortedMapKeys(data map[string]any) []string {
+	keys := make([]string, 0, len(data))
+	for key := range data {
+		keys = append(keys, key)
+	}
+	sort.Strings(keys)
+
+	return keys
+}
+
+func formatValue(value any, level int) string {
+	switch v := value.(type) {
+	case nil:
+		return "null"
+
+	case map[string]any:
+		keys := sortedMapKeys(v)
+
+		lines := []string{"{"}
+		for _, key := range keys {
+			lines = append(lines,
+				fmt.Sprintf(
+					"%s%s: %s",
+					valuePadding(level),
+					key,
+					formatValue(v[key], level+1),
+				),
+			)
+		}
+		lines = append(lines, fmt.Sprintf("%s}", closePadding(level)))
+
+		return strings.Join(lines, "\n")
+
+	default:
+		return fmt.Sprintf("%v", v)
+	}
+}
+
+func nodePadding(level int) string {
+	return strings.Repeat(paddingChar(), level*4-2)
+}
+
+func valuePadding(level int) string {
+	return strings.Repeat(paddingChar(), level*4)
+}
+
+func closePadding(level int) string {
+	return strings.Repeat(paddingChar(), (level-1)*4)
+}
+
+func paddingChar() string {
+	return string('.')
 }
