@@ -2,7 +2,7 @@ package code
 
 import (
 	"code/internal/diff"
-	"code/internal/formatter"
+	"code/internal/formatters"
 	"code/internal/parser"
 	"fmt"
 )
@@ -18,7 +18,7 @@ func GenDiff(leftPath, rightPath, format string) (string, error) {
 	rootDepth := 1
 	tree := diff.BuildTree(leftData, rightData)
 
-	return formatter.FormatTree(tree, rootDepth, format)
+	return formatters.Format(tree, rootDepth, format)
 }
 
 func parseFiles(leftPath, rightPath string) (map[string]any, map[string]any, error) {

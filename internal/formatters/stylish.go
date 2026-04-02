@@ -1,4 +1,4 @@
-package formatter
+package formatters
 
 import (
 	"code/internal/diff"
@@ -12,7 +12,7 @@ const (
 	indentWidth = 4
 )
 
-func formatTreeStylish(tree []diff.DiffNode, depth int) (string, error) {
+func formatStylish(tree []diff.DiffNode, depth int) (string, error) {
 	lines := []string{"{"}
 
 	for _, node := range tree {
@@ -33,7 +33,7 @@ func formatTreeStylish(tree []diff.DiffNode, depth int) (string, error) {
 			lines = append(lines, formatLine(depth, " ", node.Key, formatValue(node.Left, depth+1)))
 
 		case diff.KindNested:
-			childTree, err := formatTreeStylish(node.Children, depth+1)
+			childTree, err := formatStylish(node.Children, depth+1)
 			if err != nil {
 				return "", err
 			}

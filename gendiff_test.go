@@ -91,7 +91,7 @@ func TestGenDiffFlatYAMLSameDataDifferentKeyOrder(t *testing.T) {
 	}
 }
 
-func TestGenDiffMultilevelJSON(t *testing.T) {
+func TestGenDiffJSONNested(t *testing.T) {
 	fileLeft := filepath.Join("testdata", "fixture", "file5.json")
 	fileRight := filepath.Join("testdata", "fixture", "file6.json")
 
@@ -147,5 +147,57 @@ func TestGenDiffMultilevelJSON(t *testing.T) {
 
 	if got != want {
 		t.Errorf("unexpected diff result\nwant:\n%s\ngot:\n%s", want, got)
+	}
+}
+
+func TestGenDiffJSONPlain(t *testing.T) {
+	fileLeft := filepath.Join("testdata", "fixture", "file5.json")
+	fileRight := filepath.Join("testdata", "fixture", "file6.json")
+
+	got, err := GenDiff(fileLeft, fileRight, "plain")
+	if err != nil {
+		t.Fatalf("GenDiff returned error: %v", err)
+	}
+
+	want := `Property 'common.follow' was added with value: false
+Property 'common.setting2' was removed
+Property 'common.setting3' was updated. From true to null
+Property 'common.setting4' was added with value: 'blah blah'
+Property 'common.setting5' was added with value: [complex value]
+Property 'common.setting6.doge.wow' was updated. From '' to 'so much'
+Property 'common.setting6.ops' was added with value: 'vops'
+Property 'group1.baz' was updated. From 'bas' to 'bars'
+Property 'group1.nest' was updated. From [complex value] to 'str'
+Property 'group2' was removed
+Property 'group3' was added with value: [complex value]`
+
+	if got != want {
+		t.Errorf("unexpected plain diff result\nwant:\n%s\ngot:\n%s", want, got)
+	}
+}
+
+func TestGenDiffYAMLPlain(t *testing.T) {
+	fileLeft := filepath.Join("testdata", "fixture", "file5.yml")
+	fileRight := filepath.Join("testdata", "fixture", "file6.yml")
+
+	got, err := GenDiff(fileLeft, fileRight, "plain")
+	if err != nil {
+		t.Fatalf("GenDiff returned error: %v", err)
+	}
+
+	want := `Property 'common.follow' was added with value: false
+Property 'common.setting2' was removed
+Property 'common.setting3' was updated. From true to null
+Property 'common.setting4' was added with value: 'blah blah'
+Property 'common.setting5' was added with value: [complex value]
+Property 'common.setting6.doge.wow' was updated. From '' to 'so much'
+Property 'common.setting6.ops' was added with value: 'vops'
+Property 'group1.baz' was updated. From 'bas' to 'bars'
+Property 'group1.nest' was updated. From [complex value] to 'str'
+Property 'group2' was removed
+Property 'group3' was added with value: [complex value]`
+
+	if got != want {
+		t.Errorf("unexpected plain diff result\nwant:\n%s\ngot:\n%s", want, got)
 	}
 }

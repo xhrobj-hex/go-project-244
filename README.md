@@ -5,7 +5,17 @@
 ## Возможности
 
 - Поддержка разных входных форматов: `yaml`, `json`
-- Генерация отчета в виде `stylish` (дефолтный формат), `plain text`,  и `json`
+- Генерация отчета в виде `stylish`, `plain text`,  и `json`
+
+## Структура проекта
+
+```text
+cmd/gendiff/        -> точка входа CLI
+internal/parser/    -> парсинг JSON/YAML
+internal/diff/      -> построение дерева различий
+internal/formatter/ -> форматирование результата
+testdata/fixture/   -> тестовые файлы
+```
 
 ## Установка
 
@@ -23,13 +33,17 @@ make build
 
 ```bash
 ./bin/gendiff <filepath1> <filepath2> [flags]
+```
 
 ### Флаги
 
-- `--format`, `-f` - формат вывода (`stylish` по умолчанию)
-- `--help`, `-h` - справка
+- `--help`, `-h` - показать справку
+- `--format`, `-f` - формат вывода
 
-```
+Поддерживаются форматы:
+
+- `stylish` — формат по умолчанию
+- `plain` — плоское текстовое описание изменений
 
 ### Примеры
 
@@ -42,19 +56,25 @@ make build
 Сравнить два JSON-файла:
 
 ```bash
-./bin/gendiff testdata/file1.json testdata/file2.json
+./bin/gendiff testdata/fixture/file5.json testdata/fixture/file6.json
 ```
 
 Сравнить два YAML-файла:
 
 ```bash
-./bin/gendiff testdata/file1.yml testdata/file2.yml
+./bin/gendiff testdata/fixture/file5.yml testdata/fixture/file6.yml
 ```
 
 Сравнить JSON и YAML:
 
 ```bash
-./bin/gendiff testdata/file1.json testdata/file2.yml
+./bin/gendiff testdata/fixture/file5.json testdata/fixture/file6.yml
+```
+
+Вывод в формате `plain`
+
+```bash
+./bin/gendiff --format plain testdata/fixture/file5.json testdata/fixture/file6.json
 ```
 
 ---
