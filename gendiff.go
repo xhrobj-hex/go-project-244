@@ -8,9 +8,14 @@ import (
 	"strings"
 )
 
+const (
+	indentChar  = " "
+	indentWidth = 4
+)
+
 type diffNode struct {
 	Key      string
-	Kind     string // NOTE: right/left/both/tie/deep
+	Kind     string // NOTE: right/left/changed/unchanged/nested
 	Left     any
 	Right    any
 	Children []diffNode
@@ -73,14 +78,14 @@ func buildDiff(leftData, rightData map[string]any) []diffNode {
 		case leftIsObj && rightIsObj:
 			tree = append(tree, diffNode{
 				Key:      key,
-				Kind:     "deep",
+				Kind:     "nested",
 				Children: buildDiff(leftObj, rightObj),
 			})
 
 		case !reflect.DeepEqual(leftValue, rightValue):
 			tree = append(tree, diffNode{
 				Key:   key,
-				Kind:  "both",
+				Kind:  "changed",
 				Left:  leftValue,
 				Right: rightValue,
 			})
@@ -88,8 +93,8 @@ func buildDiff(leftData, rightData map[string]any) []diffNode {
 		default:
 			tree = append(tree, diffNode{
 				Key:  key,
-				Kind: "tie",
-				Left: leftValue, // NOTE: для "tie" храним только Left
+				Kind: "unchanged",
+				Left: leftValue, // NOTE: для "unchanged" храним только Left
 			})
 		}
 	}
@@ -121,7 +126,7 @@ func asMap(value any) (map[string]any, bool) {
 	return obj, ok
 }
 
-func formatTree(tree []diffNode, level int, format string) string {
+func formatTree(tree []diffNode, depth int, format string) string {
 	_ = format // NOTE: пока не используем ...
 
 	lines := []string{"{"}
@@ -129,88 +134,38 @@ func formatTree(tree []diffNode, level int, format string) string {
 	for _, node := range tree {
 		switch node.Kind {
 		case "right":
-			lines = append(lines,
-				fmt.Sprintf(
-					"%s+ %s: %s",
-					nodePadding(level),
-					node.Key,
-					formatValue(node.Right, level+1),
-				),
-			)
+			lines = append(lines, formatLine(depth, "+", node.Key, formatValue(node.Right, depth+1)))
 
 		case "left":
+			lines = append(lines, formatLine(depth, "-", node.Key, formatValue(node.Left, depth+1)))
+
+		case "changed":
 			lines = append(lines,
-				fmt.Sprintf(
-					"%s- %s: %s",
-					nodePadding(level),
-					node.Key,
-					formatValue(node.Left, level+1),
-				),
+				formatLine(depth, "-", node.Key, formatValue(node.Left, depth+1)),
+				formatLine(depth, "+", node.Key, formatValue(node.Right, depth+1)),
 			)
 
-		case "both":
-			lines = append(lines,
-				fmt.Sprintf(
-					"%s- %s: %s",
-					nodePadding(level),
-					node.Key,
-					formatValue(node.Left, level+1),
-				),
-			)
-			lines = append(lines,
-				fmt.Sprintf(
-					"%s+ %s: %s",
-					nodePadding(level),
-					node.Key,
-					formatValue(node.Right, level+1),
-				),
-			)
+		case "unchanged":
+			lines = append(lines, formatLine(depth, " ", node.Key, formatValue(node.Left, depth+1)))
 
-		case "tie":
-			lines = append(lines,
-				fmt.Sprintf(
-					"%s%s%s%s: %s",
-					nodePadding(level),
-					paddingChar(),
-					paddingChar(),
-					node.Key,
-					formatValue(node.Left, level+1),
-				),
-			)
-
-		case "deep":
-			lines = append(lines,
-				fmt.Sprintf(
-					"%s%s%s%s: %s",
-					nodePadding(level),
-					paddingChar(),
-					paddingChar(),
-					node.Key,
-					formatTree(node.Children, level+1, format),
-				),
-			)
+		case "nested":
+			lines = append(lines, formatLine(depth, " ", node.Key, formatTree(node.Children, depth+1, format)))
 
 		default:
-			lines = append(lines, "**! error <--")
+			lines = append(lines, "(о_0) error <--")
 		}
 	}
 
-	lines = append(lines, fmt.Sprintf("%s}", closePadding(level)))
+	lines = append(lines, fmt.Sprintf("%s}", closingIndent(depth)))
 
 	return strings.Join(lines, "\n")
 }
 
-func sortedMapKeys(data map[string]any) []string {
-	keys := make([]string, 0, len(data))
-	for key := range data {
-		keys = append(keys, key)
-	}
-	sort.Strings(keys)
-
-	return keys
+func formatLine(depth int, sign, key, value string) string {
+	return fmt.Sprintf("%s%s %s: %s", nodeIndent(depth), sign, key, value)
 }
 
-func formatValue(value any, level int) string {
+func formatValue(value any, depth int) string {
 	switch v := value.(type) {
 	case nil:
 		return "null"
@@ -223,13 +178,13 @@ func formatValue(value any, level int) string {
 			lines = append(lines,
 				fmt.Sprintf(
 					"%s%s: %s",
-					valuePadding(level),
+					valueIndent(depth),
 					key,
-					formatValue(v[key], level+1),
+					formatValue(v[key], depth+1),
 				),
 			)
 		}
-		lines = append(lines, fmt.Sprintf("%s}", closePadding(level)))
+		lines = append(lines, fmt.Sprintf("%s}", closingIndent(depth)))
 
 		return strings.Join(lines, "\n")
 
@@ -238,18 +193,24 @@ func formatValue(value any, level int) string {
 	}
 }
 
-func nodePadding(level int) string {
-	return strings.Repeat(paddingChar(), level*4-2)
+func sortedMapKeys(data map[string]any) []string {
+	keys := make([]string, 0, len(data))
+	for key := range data {
+		keys = append(keys, key)
+	}
+	sort.Strings(keys)
+
+	return keys
 }
 
-func valuePadding(level int) string {
-	return strings.Repeat(paddingChar(), level*4)
+func nodeIndent(depth int) string {
+	return strings.Repeat(indentChar, depth*indentWidth-2)
 }
 
-func closePadding(level int) string {
-	return strings.Repeat(paddingChar(), (level-1)*4)
+func valueIndent(depth int) string {
+	return strings.Repeat(indentChar, depth*indentWidth)
 }
 
-func paddingChar() string {
-	return string('.')
+func closingIndent(depth int) string {
+	return strings.Repeat(indentChar, (depth-1)*indentWidth)
 }
